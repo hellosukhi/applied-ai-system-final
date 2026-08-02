@@ -23,7 +23,9 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, field, replace
 from datetime import date, time, timedelta
 from enum import Enum
-from typing import Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union
+
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 # Design note (applies to PetSpecies, TaskFrequency, and TaskPriority):
@@ -105,6 +107,106 @@ _HEALTH_CONTEXT_BOOSTS = {
     "high": {"medication": 30.0, "feeding": 6.0},
     "moderate": {"medication": 2.0, "feeding": 2.0},
 }
+
+
+class ScheduleAgentTask(BaseModel):
+    """Typed representation of a single task payload emitted by an AI scheduling assistant."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    task_id: str
+    title: str
+    duration_minutes: int
+    base_priority: int
+    pet_name: Optional[str] = None
+    is_completed: bool = False
+    priority: TaskPriority = TaskPriority.MEDIUM
+    scheduled_time: Optional[str] = None
+    due_date: Optional[date] = None
+    frequency: TaskFrequency = TaskFrequency.DAILY
+    is_recurring: bool = False
+    recurring_occurrences: int = 1
+    dosage: str = ""
+    dosage_window: str = ""
+    food_type: str = ""
+    amount_grams: int = 0
+    type: str = "FeedingTask"
+
+    @field_validator("priority", mode="before")
+    @classmethod
+    def _validate_priority(cls, value: Any) -> TaskPriority:
+        return TaskPriority.from_value(value)
+
+    @field_validator("frequency", mode="before")
+    @classmethod
+    def _validate_frequency(cls, value: Any) -> TaskFrequency:
+        return TaskFrequency.from_value(value)
+
+    def to_domain_task(self) -> Task:
+        """Materialize this validated AI payload into the concrete domain task subclass."""
+        common_kwargs = {
+            "task_id": self.task_id,
+            "title": self.title,
+            "duration_minutes": self.duration_minutes,
+            "base_priority": self.base_priority,
+            "pet_name": self.pet_name,
+            "is_completed": self.is_completed,
+            "priority": self.priority,
+            "scheduled_time": self.scheduled_time,
+            "due_date": self.due_date,
+            "frequency": self.frequency,
+            "is_recurring": self.is_recurring,
+            "recurring_occurrences": self.recurring_occurrences,
+        }
+
+        if self.type == "MedicationTask":
+            return MedicationTask(
+                **common_kwargs,
+                dosage=self.dosage,
+                dosage_window=self.dosage_window,
+            )
+
+        if self.type == "FeedingTask":
+            return FeedingTask(
+                **common_kwargs,
+                food_type=self.food_type,
+                amount_grams=self.amount_grams,
+            )
+
+        raise ValueError(f"Unsupported task type for AI schedule conversion: {self.type}")
+
+
+class ScheduleAgentResponse(BaseModel):
+    """Typed envelope for a schedule plan returned by an agent or RAG layer."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    plan: List[ScheduleAgentTask] = Field(default_factory=list)
+    summary: Optional[str] = None
+
+    def to_domain_tasks(self) -> List[Task]:
+        """Convert the validated AI payload into domain Task instances for scheduling."""
+        domain_tasks: List[Task] = []
+        for item in self.plan:
+            domain_tasks.append(item.to_domain_task())
+        return domain_tasks
+
+
+def parse_ai_schedule_response(raw_response: Union[str, bytes, Dict[str, Any]]) -> ScheduleAgentResponse:
+    """Parse a raw AI-produced JSON payload into a validated Pydantic response model."""
+    if isinstance(raw_response, (bytes, bytearray)):
+        payload = raw_response.decode("utf-8")
+    else:
+        payload = raw_response
+
+    if isinstance(payload, str):
+        parsed_payload = json.loads(payload)
+    elif isinstance(payload, dict):
+        parsed_payload = payload
+    else:
+        raise TypeError("raw_response must be a JSON string, bytes payload, or dictionary")
+
+    return ScheduleAgentResponse.model_validate(parsed_payload)
 
 
 @dataclass

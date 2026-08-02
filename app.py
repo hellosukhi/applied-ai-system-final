@@ -127,14 +127,20 @@ if owner.pets:
     task_title = st.text_input("Task title", value="Meal time", key="task_title_input")
     priority_level = st.selectbox(
         "Priority",
-        ["low", "medium", "high"],
+        [TaskPriority.LOW.value, TaskPriority.MEDIUM.value, TaskPriority.HIGH.value],
         index=1,
         key="task_priority_select",
     )
     duration = st.number_input(
         "Duration (minutes)", min_value=1, max_value=240, value=10, key="task_duration_input"
     )
-    priority = st.number_input("Priority", min_value=0, max_value=10, value=5, key="task_priority_input")
+    base_priority = st.number_input(
+        "Base priority",
+        min_value=0,
+        max_value=10,
+        value=5,
+        key="task_base_priority_input",
+    )
 
     if task_type == "feeding":
         food_type = st.text_input("Food type", value="dry food", key="food_type_input")
@@ -146,7 +152,7 @@ if owner.pets:
                 task_id=uuid.uuid4().hex,
                 title=task_title.strip() or "Feeding",
                 duration_minutes=int(duration),
-                base_priority=int(priority),
+                base_priority=int(base_priority),
                 priority=priority_level,
                 food_type=food_type,
                 amount_grams=int(amount_grams),
@@ -163,7 +169,7 @@ if owner.pets:
                 task_id=uuid.uuid4().hex,
                 title=task_title.strip() or "Medication",
                 duration_minutes=int(duration),
-                base_priority=int(priority),
+                base_priority=int(base_priority),
                 priority=priority_level,
                 dosage=dosage,
                 dosage_window=dosage_window,

@@ -8,12 +8,14 @@ from pawpal_system import (
     Owner,
     Pet,
     PetSpecies,
+    ScheduleAgentResponse,
     ScheduleItem,
     Scheduler,
     SchedulerEngine,
     Task,
     TaskFrequency,
     TaskPriority,
+    parse_ai_schedule_response,
 )
 
 
@@ -374,6 +376,22 @@ def test_scheduler_filters_tasks_by_completion_status_and_pet_name():
     )
 
     assert filtered == [pending_task]
+
+
+def test_llm_schedule_payload_is_parsed_into_typed_pydantic_response():
+    raw_payload = (
+        '{"plan": [{"task_id": "med-9", "title": "Evening medicine", '
+        '"duration_minutes": 10, "base_priority": 9, "priority": "HIGH", '
+        '"scheduled_time": "19:00", "frequency": "daily", '
+        '"pet_name": "Mochi", "is_completed": false}]}'
+    )
+
+    parsed = parse_ai_schedule_response(raw_payload)
+
+    assert isinstance(parsed, ScheduleAgentResponse)
+    assert parsed.plan[0].priority is TaskPriority.HIGH
+    assert parsed.plan[0].frequency is TaskFrequency.DAILY
+    assert parsed.plan[0].base_priority == 9
 
 
 def test_scheduler_filters_schedule_items_by_pet_and_completion_status():
