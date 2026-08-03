@@ -1,0 +1,94 @@
+{
+  "name": "Jordan",
+  "daily_time_budget_minutes": 120,
+  "pets": [
+    {
+      "name": "Wolfie",
+      "species": "dog",
+      "age": 4,
+      "health_flags": [
+        "pain"
+      ],
+      "tasks": [
+        {
+          "task_id": "seed-med-1",
+          "title": "Otomax Ear Drops",
+          "duration_minutes": 10,
+          "base_priority": 8,
+          "pet_name": "Wolfie",
+          "is_completed": false,
+          "priority": "high",
+          "scheduled_time": "08:00",
+          "due_date": null,
+          "frequency": "daily",
+          "is_recurring": true,
+          "recurring_occurrences": 2,
+          "type": "MedicationTask",
+          "dosage": "1 drop",
+          "dosage_window": "morning"
+        },
+        {
+          "task_id": "seed-feed-1",
+          "title": "Evening Walk",
+          "duration_minutes": 20,
+          "base_priority": 5,
+          "pet_name": "Wolfie",
+          "is_completed": false,
+          "priority": "medium",
+          "scheduled_time": "18:00",
+          "due_date": null,
+          "frequency": "daily",
+          "is_recurring": false,
+          "recurring_occurrences": 1,
+          "type": "FeedingTask",
+          "food_type": "walk",
+          "amount_grams": 0
+        }
+      ]
+    },
+    {
+      "name": "Cleo",
+      "species": "cat",
+      "age": 2,
+      "health_flags": [
+        "sensitive"
+      ],
+      "tasks": [
+        {
+          "task_id": "seed-feed-2",
+          "title": "Cat Feeding",
+          "duration_minutes": 12,
+          "base_priority": 4,
+          "pet_name": "Cleo",
+          "is_completed": false,
+          "priority": "medium",
+          "scheduled_time": "18:30",
+          "due_date": null,
+          "frequency": "daily",
+          "is_recurring": false,
+          "recurring_occurrences": 1,
+          "type": "FeedingTask",
+          "food_type": "wet food",
+          "amount_grams": 180
+        },
+        {
+          "task_id": "seed-med-2",
+          "title": "Medication",
+          "duration_minutes": 8,
+          "base_priority": 6,
+          "pet_name": "Cleo",
+          "is_completed": false,
+          "priority": "high",
+          "scheduled_time": "20:00",
+          "due_date": null,
+          "frequency": "daily",
+          "is_recurring": false,
+          "recurring_occurrences": 1,
+          "type": "MedicationTask",
+          "dosage": "1 tablet",
+          "dosage_window": "evening"
+        }
+      ]
+    }
+  ]
+}

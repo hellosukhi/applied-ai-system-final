@@ -17,6 +17,7 @@ from pawpal_system import (
     TaskPriority,
     parse_ai_schedule_response,
 )
+from agent import WolfieCareAgent
 
 
 def test_task_completion():
@@ -392,6 +393,60 @@ def test_llm_schedule_payload_is_parsed_into_typed_pydantic_response():
     assert parsed.plan[0].priority is TaskPriority.HIGH
     assert parsed.plan[0].frequency is TaskFrequency.DAILY
     assert parsed.plan[0].base_priority == 9
+
+
+def test_multimodal_agent_plan_from_image_uses_the_same_schema_bridge():
+    agent = WolfieCareAgent()
+    response = agent.plan_from_image(b"fake-jpeg-bytes", "Wolfie needs Otomax ear drops daily at 08:00.")
+
+    task_schema = response["task_schema"]
+    domain_task = response["domain_task"]
+
+    assert task_schema.priority is TaskPriority.HIGH
+    assert domain_task.priority is TaskPriority.HIGH
+    assert domain_task.scheduled_time == "08:00"
+    assert task_schema.to_domain_task().priority is TaskPriority.HIGH
+
+
+def test_owner_from_dict_can_hydrate_seed_demo_payload():
+    seed_payload = {
+        "name": "Jordan",
+        "daily_time_budget_minutes": 90,
+        "pets": [
+            {
+                "name": "Wolfie",
+                "species": "dog",
+                "age": 4,
+                "health_flags": ["pain"],
+                "tasks": [
+                    {
+                        "task_id": "seed-med-1",
+                        "title": "Gabapentin",
+                        "duration_minutes": 10,
+                        "base_priority": 8,
+                        "pet_name": "Wolfie",
+                        "is_completed": False,
+                        "priority": "HIGH",
+                        "scheduled_time": "08:00",
+                        "due_date": None,
+                        "frequency": "daily",
+                        "is_recurring": True,
+                        "recurring_occurrences": 2,
+                        "type": "MedicationTask",
+                        "dosage": "1 tablet",
+                        "dosage_window": "morning",
+                    }
+                ],
+            }
+        ],
+    }
+
+    owner = Owner.from_dict(seed_payload)
+
+    assert owner.name == "Jordan"
+    assert len(owner.pets) == 1
+    assert owner.pets[0].tasks[0].task_id == "seed-med-1"
+    assert owner.pets[0].tasks[0].priority is TaskPriority.HIGH
 
 
 def test_scheduler_filters_schedule_items_by_pet_and_completion_status():

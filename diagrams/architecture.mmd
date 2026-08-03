@@ -1,0 +1,48 @@
+%% Wolfie OS v1.0.0 — System Architecture
+%% Hybrid Agentic-Deterministic Engine: Local RAG + Pydantic Guardrails + O(N^2) core
+flowchart TD
+    subgraph Presentation["🎨 Presentation Layer"]
+        UI["app.py<br/>Streamlit GUI"]
+        CLI["main.py<br/>CLI demo"]
+    end
+
+    subgraph Agentic["🤖 Agentic / RAG Layer"]
+        AGENT["WolfieCareAgent<br/>(agent.py)"]
+        RAG["VetGuidelineRAG<br/>keyword-overlap retriever"]
+        DOCS[("docs/vet_guidelines.md<br/>retrieval corpus")]
+        SCHEMA["ExtractedTaskSchema<br/>(schemas.py) — Pydantic guardrail"]
+    end
+
+    subgraph Core["⚙️ Deterministic Core (pawpal_system.py)"]
+        ENUMS["Domain Enums<br/>PetSpecies · TaskPriority · TaskFrequency"]
+        TASKS["Task hierarchy<br/>MedicationTask · FeedingTask"]
+        ENGINE["SchedulerEngine<br/>detect_conflicts O(N^2)<br/>find_next_available_slot O(N log N)"]
+        PERSIST[("data.json<br/>to_dict / from_dict")]
+    end
+
+    subgraph Eval["🧪 Reliability"]
+        HARNESS["eval_harness.py<br/>Vectors A/B/C"]
+        TRACES[("ai_interactions.md<br/>reasoning traces")]
+    end
+
+    RAWTEXT["Unstructured vet note"] --> AGENT
+    UI --> AGENT
+    AGENT -->|1. retrieve| RAG
+    RAG -.indexes.-> DOCS
+    RAG -->|context escalates priority / timing| AGENT
+    AGENT -->|2. extract + validate| SCHEMA
+    SCHEMA -->|re-exports single source of truth| ENUMS
+    SCHEMA -->|3. to_domain_task| TASKS
+    TASKS --> ENGINE
+    ENGINE --> PERSIST
+    ENGINE --> UI
+    ENGINE --> CLI
+
+    HARNESS --> AGENT
+    HARNESS --> ENGINE
+    HARNESS --> TRACES
+
+    classDef corenode fill:#1f2933,stroke:#7b8794,color:#e4e7eb
+    classDef agentnode fill:#243b53,stroke:#4a90d9,color:#e4e7eb
+    class ENUMS,TASKS,ENGINE,PERSIST corenode
+    class AGENT,RAG,SCHEMA,DOCS agentnode
